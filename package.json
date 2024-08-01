@@ -1,0 +1,30 @@
+{
+  "name": "kyc-contract",
+  "version": "1.0.0",
+  "description": "omdao kyc smart contract",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Omdao2022/smart-contract.git"
+  },
+  "keywords": [
+    "omdao",
+    "kyc",
+    "smart",
+    "contract",
+    "solidity"
+  ],
+  "author": "hcrypto7",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Omdao2022/smart-contract/issues"
+  },
+  "homepage": "https://github.com/Omdao2022/smart-contract#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.7"
+  }
+}
