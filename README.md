@@ -1,15 +1,22 @@
-# smart-contract
+# OmDAO KYC smart contract
 
-solidity smart contract for KYC.
+Solidity smart contract for KYC.
 
-# env
+## env
 
-# deploy
+## deploy
 ```sh
-
+npx hardhat deploy
 ```
 
-# test
-```sh
+## compile
 
+```sh
+npx hardhat compile
 ```
+
+## test
+```sh
+npx hardhat test
+```
+
