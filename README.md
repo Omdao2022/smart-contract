@@ -6,7 +6,7 @@ Solidity smart contract for KYC.
 
 ## deploy
 ```sh
-npx hardhat deploy
+npx hardhat ignition deploy ignition/modules/KYC.ts
 ```
 
 ## compile
