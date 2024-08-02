@@ -15,6 +15,7 @@ contract KYC {
   mapping(address => bool) public kycPassed;
 
   event KYCApproved(address indexed wallet);
+  event KYCRevoked(address indexed wallet);
 
   constructor() {
     owner = msg.sender;
@@ -24,6 +25,12 @@ contract KYC {
   function approveKYC(address _wallet) public onlyOwner {
     kycPassed[_wallet] = true;
     emit KYCApproved(_wallet);
+  }
+
+  // To be called by backend after KYC revoke
+  function revokeKYC(address _wallet) public onlyOwner {
+    kycPassed[_wallet] = false;
+    emit KYCRevoked(_wallet);
   }
 
   // Function to check if a wallet has passed KYC

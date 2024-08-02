@@ -28,9 +28,31 @@ describe("KYC", function () {
 
     it("only owner can approve KYC", async function () {
       const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
-      await expect(kyc.connect(otherAccount).approveKYC(otherAccount.address)).to.be.revertedWith(
-        "Not authorized"
-      );
+      await expect(
+        kyc.connect(otherAccount).approveKYC(otherAccount.address)
+      ).to.be.revertedWith("Not authorized");
+    });
+  });
+
+  describe("KYC revoke", function () {
+    it("every wallet address shouldn't be kyc verified", async function () {
+      const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
+      expect(await kyc.isKYCPassed(otherAccount.address)).to.equal(false);
+    });
+
+    it("verify a wallet address and revoke", async function () {
+      const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
+      await kyc.approveKYC(otherAccount.address);
+      expect(await kyc.isKYCPassed(otherAccount.address)).to.equal(true);
+      await kyc.revokeKYC(otherAccount.address);
+      expect(await kyc.isKYCPassed(otherAccount.address)).to.equal(false);
+    });
+
+    it("only owner can revoke KYC", async function () {
+      const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
+      await expect(
+        kyc.connect(otherAccount).revokeKYC(otherAccount.address)
+      ).to.be.revertedWith("Not authorized");
     });
   });
 
@@ -48,9 +70,9 @@ describe("KYC", function () {
 
     it("Only owner can transfer ownership", async function () {
       const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
-      await expect(kyc.connect(otherAccount).transferOwner(otherAccount)).to.be.revertedWith("Not authorized");
+      await expect(
+        kyc.connect(otherAccount).transferOwner(otherAccount)
+      ).to.be.revertedWith("Not authorized");
     });
-  })
-
-
+  });
 });
