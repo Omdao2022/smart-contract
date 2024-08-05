@@ -93,11 +93,6 @@ describe("KYC Contract", function () {
     it("Should initialize the DOMAIN_SEPARATOR correctly", async function () {
       const { kyc, otherAccount, owner } = await loadFixture(deployKycFixture);
       const abiCoder = new hre.ethers.AbiCoder();
-      console.log(
-        "abiCoder=======>",
-        await kyc.getAddress(),
-        hre.network.config.chainId
-      );
       const expectedDomainSeparator = hre.ethers.keccak256(
         abiCoder.encode(
           ["bytes32", "bytes32", "bytes32", "uint256", "address"],
@@ -114,8 +109,6 @@ describe("KYC Contract", function () {
           ]
         )
       );
-
-      console.log("SetKYC:", expectedDomainSeparator);
 
       expect(await kyc.DOMAIN_SEPARATOR()).to.equal(expectedDomainSeparator);
     });
@@ -138,10 +131,7 @@ describe("KYC Contract", function () {
             "0x01",
             DOMAIN_SEPARATOR,
             hre.ethers.keccak256(
-              abiCoder.encode(
-                ["bytes32", "address"],
-                [SET_KYC_TYPEHASH, user]
-              )
+              abiCoder.encode(["bytes32", "address"], [SET_KYC_TYPEHASH, user])
             ),
           ]
         )
@@ -170,8 +160,108 @@ describe("KYC Contract", function () {
       // Verify KYC
       await kyc.connect(otherAccount).setKYC(user, signature);
       const kyc_info = await kyc.kyc_passed(otherAccount.address);
-      console.log(kyc_info);
       expect(kyc_info).to.be.true;
+    });
+
+    it("Should reject unknown signature", async function () {
+      const { kyc, owner, otherAccount } = await loadFixture(deployKycFixture);
+      const user = otherAccount.address;
+      const DOMAIN_SEPARATOR = await kyc.DOMAIN_SEPARATOR();
+      const SET_KYC_TYPEHASH = await kyc.SET_KYC_TYPEHASH();
+
+      // Create the digest
+
+      // Create the digest
+      const abiCoder = await new hre.ethers.AbiCoder();
+      const digest = hre.ethers.keccak256(
+        hre.ethers.solidityPacked(
+          ["bytes1", "bytes1", "bytes32", "bytes32"],
+          [
+            "0x19",
+            "0x01",
+            DOMAIN_SEPARATOR,
+            hre.ethers.keccak256(
+              abiCoder.encode(["bytes32", "address"], [SET_KYC_TYPEHASH, user])
+            ),
+          ]
+        )
+      );
+
+      const domain = {
+        name: "KYC",
+        version: "1",
+        chainId: await hre.network.config.chainId,
+        verifyingContract: await kyc.getAddress(),
+      };
+
+      const types = {
+        SetKYC: [{ name: "user", type: "address" }],
+      };
+
+      const value = {
+        user: owner.address,
+      };
+
+      const signature = await otherAccount.signTypedData(domain, types, value);
+
+      // Sign the digest
+      // const signature = await owner.signMessage(hre.ethers.getBytes(digest));
+
+      // Verify KYC
+      await expect(
+        kyc.setKYC(owner.address, signature)
+      ).to.be.revertedWithCustomError(kyc, "SignatureVerificationFailed");
+    });
+
+    it("Should reject unvalid user wallet", async function () {
+      const { kyc, owner, otherAccount } = await loadFixture(deployKycFixture);
+      const user = otherAccount.address;
+      const DOMAIN_SEPARATOR = await kyc.DOMAIN_SEPARATOR();
+      const SET_KYC_TYPEHASH = await kyc.SET_KYC_TYPEHASH();
+
+      // Create the digest
+
+      // Create the digest
+      const abiCoder = await new hre.ethers.AbiCoder();
+      const digest = hre.ethers.keccak256(
+        hre.ethers.solidityPacked(
+          ["bytes1", "bytes1", "bytes32", "bytes32"],
+          [
+            "0x19",
+            "0x01",
+            DOMAIN_SEPARATOR,
+            hre.ethers.keccak256(
+              abiCoder.encode(["bytes32", "address"], [SET_KYC_TYPEHASH, user])
+            ),
+          ]
+        )
+      );
+
+      const domain = {
+        name: "KYC",
+        version: "1",
+        chainId: await hre.network.config.chainId,
+        verifyingContract: await kyc.getAddress(),
+      };
+
+      const types = {
+        SetKYC: [{ name: "user", type: "address" }],
+      };
+
+      const value = {
+        user: otherAccount.address,
+      };
+
+      const signature = await otherAccount.signTypedData(domain, types, value);
+
+      // Sign the digest
+      // const signature = await owner.signMessage(hre.ethers.getBytes(digest));
+
+      // Verify KYC
+      await expect(kyc.setKYC(user, signature)).to.be.revertedWithCustomError(
+        kyc,
+        "UnknownWalletAddress"
+      );
     });
   });
 });

@@ -3,8 +3,9 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "./IKYC.sol";
 
-contract KYC is Initializable {
+contract KYC is Initializable, IKYC {
     using ECDSAUpgradeable for bytes32;
 
     // EIP-712 Domain separator
@@ -33,25 +34,36 @@ contract KYC is Initializable {
         );
     }
 
-    function setKYC(
-        address user,
-        bytes memory signature
-    ) public {
+    function setKYC(address user_, bytes memory signature_) public {
+        if (user_ == address(0)) {
+            revert InvalidUserAddress();
+        }
+        if (user_ != msg.sender) {
+            revert UnknownWalletAddress();
+        }
+
         // Construct the digest
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(SET_KYC_TYPEHASH, user))
+                keccak256(abi.encode(SET_KYC_TYPEHASH, user_))
             )
         );
 
         // Recover address from signature and verify
         // return recoverSigner(digest, signature) == msg.sender;
-        address recover = recoverSigner(digest, signature);
+        address recoveredAddress = recoverSigner(digest, signature_);
 
-        require(recover == msg.sender, "Signature Verification failed");
-        kyc_passed[msg.sender] = true;
+        if (recoveredAddress != user_) {
+            revert SignatureVerificationFailed();
+        }
+
+        // Update KYC status
+        kyc_passed[user_] = true;
+
+        // Emit event
+        emit KYC_PASSED(user_);
     }
 
     function recoverSigner(
