@@ -162,14 +162,16 @@ describe("KYC Contract", function () {
         user: otherAccount.address,
       };
 
-      const signature = await owner.signTypedData(domain, types, value);
+      const signature = await otherAccount.signTypedData(domain, types, value);
 
       // Sign the digest
       // const signature = await owner.signMessage(hre.ethers.getBytes(digest));
 
       // Verify KYC
-      const result = await kyc.setKYC(user, signature);
-      expect(result).to.be.true;
+      await kyc.connect(otherAccount).setKYC(user, signature);
+      const kyc_info = await kyc.kyc_passed(otherAccount.address);
+      console.log(kyc_info);
+      expect(kyc_info).to.be.true;
     });
   });
 });

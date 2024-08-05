@@ -4,8 +4,6 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
-import "hardhat/console.sol";
-
 contract KYC is Initializable {
     using ECDSAUpgradeable for bytes32;
 
@@ -15,6 +13,8 @@ contract KYC is Initializable {
     // EIP-712 typehash for the setKYC function
     bytes32 public constant SET_KYC_TYPEHASH =
         keccak256("SetKYC(address user)");
+
+    mapping(address => bool) public kyc_passed;
 
     function initialize(
         string memory name,
@@ -36,7 +36,7 @@ contract KYC is Initializable {
     function setKYC(
         address user,
         bytes memory signature
-    ) public view returns (bool) {
+    ) public {
         // Construct the digest
         bytes32 digest = keccak256(
             abi.encodePacked(
@@ -49,8 +49,9 @@ contract KYC is Initializable {
         // Recover address from signature and verify
         // return recoverSigner(digest, signature) == msg.sender;
         address recover = recoverSigner(digest, signature);
-        console.log("recover==========>%s, msg.sender===========>%s", recover, msg.sender);
-        return recover == msg.sender;
+
+        require(recover == msg.sender, "Signature Verification failed");
+        kyc_passed[msg.sender] = true;
     }
 
     function recoverSigner(
