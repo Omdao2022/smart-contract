@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "./IKYC.sol";
+import "hardhat/console.sol";
 
 contract KYC is Initializable, IKYC {
     using ECDSAUpgradeable for bytes32;
@@ -15,12 +16,22 @@ contract KYC is Initializable, IKYC {
     bytes32 public constant SET_KYC_TYPEHASH =
         keccak256("SetKYC(address user)");
 
-    mapping(address => bool) public kyc_passed;
+    // KYC operator address
+    address public kycOperator;
+
+    mapping(address => bool) public kycPassed;
 
     function initialize(
-        string memory name,
-        string memory version
+        string calldata name,
+        string calldata version,
+        address _kycOperator
     ) public initializer {
+        if (_kycOperator == address(0)) {
+            revert InvalidOperatorAddress();
+        }
+        kycOperator = _kycOperator;
+        console.log("%s", _kycOperator);
+
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256(
@@ -34,12 +45,19 @@ contract KYC is Initializable, IKYC {
         );
     }
 
-    function setKYC(address user_, bytes memory signature_) public {
-        if (user_ == address(0)) {
-            revert InvalidUserAddress();
+    modifier onlyKYCOperator() {
+        if (msg.sender != kycOperator) {
+            revert Unauthorized();
         }
-        if (user_ != msg.sender) {
-            revert UnknownWalletAddress();
+        _;
+    }
+
+    function setKYC(
+        address user,
+        bytes calldata signature
+    ) public onlyKYCOperator {
+        if (user == address(0)) {
+            revert InvalidUserAddress();
         }
 
         // Construct the digest
@@ -47,29 +65,22 @@ contract KYC is Initializable, IKYC {
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(SET_KYC_TYPEHASH, user_))
+                keccak256(abi.encode(SET_KYC_TYPEHASH, user))
             )
         );
 
         // Recover address from signature and verify
-        // return recoverSigner(digest, signature) == msg.sender;
-        address recoveredAddress = recoverSigner(digest, signature_);
+        address recoveredAddress = digest.recover(signature);
+        console.log("%s, %s", recoveredAddress, kycOperator);
 
-        if (recoveredAddress != user_) {
+        if (recoveredAddress != kycOperator) {
             revert SignatureVerificationFailed();
         }
 
         // Update KYC status
-        kyc_passed[user_] = true;
+        kycPassed[user] = true;
 
         // Emit event
-        emit KYC_PASSED(user_);
-    }
-
-    function recoverSigner(
-        bytes32 digest,
-        bytes memory signature
-    ) internal pure returns (address) {
-        return digest.recover(signature);
+        emit KYC_PASSED(user);
     }
 }

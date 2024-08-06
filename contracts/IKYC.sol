@@ -5,7 +5,10 @@ interface IKYC {
     // Custom errors
     error InvalidUserAddress();
     error SignatureVerificationFailed();
-    error UnknownWalletAddress();
+    error InvalidOperatorAddress();
+    error Unauthorized();
+
+
 
     // Events
 
@@ -13,6 +16,6 @@ interface IKYC {
     event KYC_PASSED(address indexed _wallet);
 
     // Function declarations
-    function initialize(string memory name, string memory version) external;
-    function setKYC(address user, bytes memory signature) external;
+    function initialize(string calldata name, string calldata version, address _kycOperator) external;
+    function setKYC(address user, bytes calldata signature) external;
 }
