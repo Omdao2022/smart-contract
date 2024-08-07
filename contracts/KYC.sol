@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "./IKYC.sol";
-import "hardhat/console.sol";
 
 contract KYC is Initializable, IKYC {
     using ECDSAUpgradeable for bytes32;
@@ -30,7 +29,6 @@ contract KYC is Initializable, IKYC {
             revert InvalidOperatorAddress();
         }
         kycOperator = _kycOperator;
-        console.log("%s", _kycOperator);
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
@@ -45,17 +43,10 @@ contract KYC is Initializable, IKYC {
         );
     }
 
-    modifier onlyKYCOperator() {
-        if (msg.sender != kycOperator) {
-            revert Unauthorized();
-        }
-        _;
-    }
-
     function setKYC(
         address user,
         bytes calldata signature
-    ) public onlyKYCOperator {
+    ) public {
         if (user == address(0)) {
             revert InvalidUserAddress();
         }
@@ -71,7 +62,6 @@ contract KYC is Initializable, IKYC {
 
         // Recover address from signature and verify
         address recoveredAddress = digest.recover(signature);
-        console.log("%s, %s", recoveredAddress, kycOperator);
 
         if (recoveredAddress != kycOperator) {
             revert SignatureVerificationFailed();
