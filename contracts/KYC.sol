@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
@@ -8,7 +9,7 @@ import "./IKYC.sol";
 
 /// @title KYC Contract
 /// @notice This contract manages KYC statuses using EIP-712 standard for typed data hashing.
-contract KYC is Initializable, EIP712Upgradeable, IKYC {
+contract KYC is Initializable, OwnableUpgradeable, EIP712Upgradeable, IKYC {
     using ECDSAUpgradeable for bytes32;
 
     // Typehash for the setKYC function as per EIP-712 standard
@@ -32,6 +33,7 @@ contract KYC is Initializable, EIP712Upgradeable, IKYC {
         if (_kycOperator == address(0)) {
             revert InvalidOperatorAddress();
         }
+        __Ownable_init();
         kycOperator = _kycOperator;
         __EIP712_init(name, version);
     }
@@ -46,7 +48,7 @@ contract KYC is Initializable, EIP712Upgradeable, IKYC {
 
     /// @notice Transfers the role of the KYC operator to a new address.
     /// @param newOperator The address of the new KYC operator.
-    function transferKycOperator(address newOperator) public onlyOperator {
+    function transferKycOperator(address newOperator) public onlyOwner {
         if (newOperator == address(0)) {
             revert InvalidOperatorAddress();
         }
